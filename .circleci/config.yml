@@ -129,7 +129,7 @@ workflows:
   myWorkflow:
     jobs:
       - create_infrastructure
-      - get_url
+      - get_url:
           requires:
             - create_infrastructure
       - print_url:
