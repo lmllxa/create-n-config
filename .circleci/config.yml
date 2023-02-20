@@ -70,7 +70,7 @@ jobs:
       - run: pwd
       - add_ssh_keys:
               # You can get this ID in the section where you registered the SSH Key
-              fingerprints: ["3b:d2:6b:4d:3d:9a:e8:4e:99:c4:bb:64:7f:c9:35:c9"]
+              fingerprints: ["79:26:76:1a:35:4e:8d:be:26:e5:44:73:4d:44:86:40"]
       - run:
           name: Install aws cli and Ansible
           command: |
