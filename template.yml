@@ -17,10 +17,18 @@ Resources:
     Properties:
       GroupDescription: Enable SSH access via port 22
       Tags:
-        - Key: "Name"
-          Value: "node-web-server"
+        - Key: Name
+          Value: node-web-server
       SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: '22'
           ToPort: '22'
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: '3000'
+          ToPort: '3000'
           CidrIp: 0.0.0.0/0
