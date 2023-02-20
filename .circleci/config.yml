@@ -131,7 +131,7 @@ workflows:
       - create_infrastructure
       - get_url
           requires:
-            -create_infrastructure
+            - create_infrastructure
       - print_url:
           requires:
             - get_url

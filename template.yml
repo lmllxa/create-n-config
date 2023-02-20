@@ -16,6 +16,9 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH access via port 22
+      Tags:
+        - Key: "Name"
+          Value: "node-web-server"
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: '22'
