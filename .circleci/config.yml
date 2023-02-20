@@ -93,10 +93,10 @@ jobs:
               --query 'Reservations[*].Instances[*].PublicIpAddress' \
               --filters "Name=tag:Name,Values=node-web-server" \
               --output text >> inventory)
-            echo "front end ip= $FRONTEND_IP"
+            echo "front end ip= $FRONTEND_IP_TEST"
             echo "print inventory..."
             cat inventory
-            export API_URL="http://${FRONTEND_IP}:3000"
+            export API_URL="http://${FRONTEND_IP_TEST}:3000"
             mkdir -p url-file
             touch url-file/echo-output
             echo "API_URL=$API_URL"
