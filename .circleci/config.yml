@@ -1,0 +1,138 @@
+
+version: 2.1
+executors:
+  my-executor:
+    docker:
+      - image: amazon/aws-cli
+    working_directory: ~/
+
+jobs:
+  create_infrastructure: 
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Create Cloudformation Stack
+          command: |
+            aws cloudformation deploy \
+              --template-file template.yml \
+              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+              --region us-east-1
+  get_url:
+    executor: my-executor
+    steps:
+      - run:
+          name: Install tar utility
+          command: |
+            yum update -y
+            yum install -y tar gzip
+      - run:
+          name: Get frontend url
+          command: |
+            export FRONTEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=node-web-server" \
+              --output text)
+            export API_URL="http://${FRONTEND_IP}:3000"
+            echo $API_URL > ~/echo-output
+            cat ~/echo-output
+            ls -al
+      - persist_to_workspace:
+          # Must be an absolute path, or relative path from working_directory. This is a directory on the container which is
+          # taken to be the root directory of the workspace.
+          root: ~/
+          # Must be relative path from root
+          paths:
+            - echo-output
+  print_url:
+    executor: my-executor
+    steps:
+      - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Print URL
+          command: |
+            cat ~/echo-output
+            export MY_IP=`cat ~/echo-output`    
+            echo "my ip = $MY_IP"  
+
+  configure_infrastructure: 
+    docker:
+      - image: python:3.7-alpine3.16
+    working_directory: ~/
+    steps:
+      - checkout
+      - run: pwd
+      - add_ssh_keys:
+              # You can get this ID in the section where you registered the SSH Key
+              # fingerprints: ["74:6b:a1:9f:84:19:56:fd:e9:4b:38:e1:8a:5f:b3:55"] 
+              fingerprints: ["0a:cf:9f:c3:5c:98:07:e8:b3:bd:ea:fa:a5:44:22:3e"]
+      - run:
+          name: Install aws cli and Ansible
+          command: |
+            # Install aws cli
+            pip install awscli
+            apk add --no-cache aws-cli tar gzip
+            apk --no-cache add curl
+            aws --version
+            # Install Ansible
+            apk add --update ansible
+      - run:
+          name: Get frontend url
+          command: |
+            export FRONTEND_IP_TEST=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=node-web-server" \
+              --output text)
+            export FRONTEND_IP=$(aws ec2 describe-instances \
+              --query 'Reservations[*].Instances[*].PublicIpAddress' \
+              --filters "Name=tag:Name,Values=node-web-server" \
+              --output text >> inventory)
+            echo "front end ip= $FRONTEND_IP_TEST"
+            echo "print inventory..."
+            cat inventory
+            export API_URL="http://${FRONTEND_IP_TEST}:3000"
+            mkdir -p url-file
+            touch url-file/echo-output
+            echo "API_URL=$API_URL"
+            echo $API_URL >> url-file/echo-output
+            echo "print current directory..."
+            pwd
+            ls -al
+            ls url-file/
+            cat url-file/echo-output
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - inventory
+            - url-file/echo-output
+      - run:
+          name: List files
+          command: |
+            ls -al
+            echo '^^^The files in my repo^^^'
+      - run:
+          name: Run Playbook and Configure server
+          command: |
+            echo "print current directory..."
+            pwd
+            echo "print inventory..."
+            cat inventory
+            # Your command --private-key udacity.pem
+            ansible-playbook main.yml -i inventory             
+workflows:
+  myWorkflow:
+    jobs:
+      - create_infrastructure
+      - get_url
+          requires:
+            -create_infrastructure
+      - print_url:
+          requires:
+            - get_url
+      - configure_infrastructure
