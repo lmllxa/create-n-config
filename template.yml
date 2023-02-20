@@ -4,6 +4,9 @@ Resources:
   EC2Instance:
     Type: 'AWS::EC2::Instance'
     Properties:
+      Tags:
+        - Key: Name
+          Value: node-web-server
       SecurityGroups:
         - !Ref InstanceSecurityGroup
       # Change this, as applicable to you      
@@ -16,9 +19,6 @@ Resources:
     Type: 'AWS::EC2::SecurityGroup'
     Properties:
       GroupDescription: Enable SSH access via port 22
-      Tags:
-        - Key: Name
-          Value: node-web-server
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
