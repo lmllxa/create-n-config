@@ -148,11 +148,19 @@ jobs:
       - attach_workspace:
           at: ~/
       - run:
+          name: print directory
+          command: |
+            echo "print current directory..."
+            pwd
+            ls -al
+            ls url-file/
+            cat url-file/echo-output
+      - run:
           name: smoke test
           command: |
             echo 'print echo-output '
-            cat ~/echo-output
-            export MY_WEB_URL=`cat ~/echo-output`    
+            cat url-file/echo-output
+            export MY_WEB_URL=`cat url-file/echo-output`    
             echo $MY_WEB_URL 
             # Test if website works
             testServer() {
