@@ -7,6 +7,17 @@ executors:
     working_directory: ~/
 
 jobs:
+commands:
+    # Exercise - Rollback
+    destroy_environment:
+      steps:
+        - run:
+            name: Destroy environment
+            # ${CIRCLE_WORKFLOW_ID} is a Built-in environment variable 
+            # ${CIRCLE_WORKFLOW_ID:0:5} takes the first 5 chars of the variable CIRCLE_CI_WORKFLOW_ID 
+            when: on_fail
+            command: |
+              aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
   create_infrastructure: 
     docker:
       - image: amazon/aws-cli
@@ -19,6 +30,10 @@ jobs:
               --template-file template.yml \
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
               --region us-east-1
+      # Fail the job intentionally to simulate an error.
+      # Uncomment the line below if we want to fail the current step
+      # - run: return 1
+      - destroy_environment
   get_url:
     executor: my-executor
     steps:
@@ -123,7 +138,35 @@ jobs:
             echo "print inventory..."
             cat inventory
             # Your command --private-key udacity.pem
-            ansible-playbook main.yml -i inventory             
+            ansible-playbook main.yml -i inventory       
+  smoke_test:
+    executor: my-executor
+    steps:
+      - run:
+          name: Install tar utility
+          command: |
+            yum install -y tar gzip
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: smoke test
+          command: |
+            echo 'print echo-output '
+            cat ~/echo-output
+            export MY_WEB_URL=`cat ~/echo-output`    
+            echo $MY_WEB_URL 
+            # Test if website works
+            testServer() {
+              if curl -s --head ${MY_WEB_URL} 
+              then
+                return 0
+              else
+                return 1
+              fi              
+            }
+            testServer 
+      - destroy_environment 
+
 workflows:
   myWorkflow:
     jobs:
@@ -137,3 +180,6 @@ workflows:
       - configure_infrastructure:
           requires:
             - create_infrastructure
+      - smoke_test:
+          requires:
+            - configure_infrastructure
