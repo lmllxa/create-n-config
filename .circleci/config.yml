@@ -5,8 +5,8 @@ executors:
     docker:
       - image: amazon/aws-cli
     working_directory: ~/
-
-jobs:
+commands:
+  # Exercise - Rollback
   destroy_environment:
     steps:
       - run:
@@ -16,6 +16,7 @@ jobs:
           when: on_fail
           command: |
             aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5}
+jobs:
   create_infrastructure: 
     docker:
       - image: amazon/aws-cli
